@@ -6,10 +6,10 @@
 # © Klaas Schoute
 #
 substitutions:
-  device_name: home-assistant-glow
+  device_name: home-assistant-flux
   friendly_name: House
-  project_version: "4.0.0"
-  device_description: "Measure your energy consumption with the pulse LED on your smart meter"
+  project_version: "0.1"
+  device_description: "Measure your gas consumption with the magnet on your dumb gas meter"
 
   # Define the GPIO pins
   pulse_pin: GPIO13
@@ -18,17 +18,17 @@ substitutions:
   led_pin_green: GPIO4
 
   # Webserver credentials ⬇ #
-  web_username: 'glow'
+  web_username: 'flux'
   web_password: 'esphome'
 
 dashboard_import:
-  package_import_url: github://klaasnicolaas/home-assistant-glow/home_assistant_glow.yaml@main
+  package_import_url: github://zwaa/home-assistant-flux/home_assistant_flux.yaml@main
 
 esphome:
   name: '${device_name}'
   comment: '${device_description}'
   project:
-    name: "klaasnicolaas.home-assistant-glow"
+    name: "zwaa.home-assistant-flux"
     version: "${project_version}"
 
 # Choose the right Platform
@@ -57,7 +57,7 @@ improv_serial:
 # Enable Home Assistant API
 api:
   services:
-    - service: reset_total_energy
+    - service: reset_total_gas
       then:
         - button.press:
             id: button_reset_total
@@ -77,7 +77,7 @@ number:
   # Select the correct pulse rate for your meter
   - platform: template
     id: select_pulse_rate
-    name: 'Puls rate - imp/kWh'
+    name: 'Pulse rate - imp/m^3'
     optimistic: true
     mode: box
     min_value: 100
@@ -113,22 +113,22 @@ status_led:
 button:
   # Restart the ESP
   - platform: restart
-    name: "Restart - Glow"
+    name: "Restart - Flux"
   # Reset the total energy entity
   - platform: template
-    name: "Reset - Total Energy"
+    name: "Reset - Total Gas"
     id: button_reset_total
     on_press:
       - pulse_meter.set_total_pulses:
-          id: sensor_energy_pulse_meter
+          id: sensor_gas_pulse_meter
           value: 0
 
 # Sensors for ESP version and WIFI information
 text_sensor:
   # Installed version
   - platform: template
-    name: "Glow - Installed version"
-    id: glow_version
+    name: "Flux - Installed version"
+    id: flux_version
     icon: "mdi:label-outline"
     entity_category: diagnostic
     lambda: |-
@@ -155,11 +155,11 @@ sensor:
 
   # Pulse meter
   - platform: pulse_meter
-    name: '${friendly_name} - Power Consumption'
-    id: sensor_energy_pulse_meter
-    unit_of_measurement: 'W'
+    name: '${friendly_name} - Gas Consumption'
+    id: sensor_gas_pulse_meter
+    unit_of_measurement: 'm^3'
     state_class: measurement
-    device_class: power
+    device_class: gas
     icon: mdi:flash-outline
     accuracy_decimals: 0
     pin: ${pulse_pin}
@@ -176,26 +176,26 @@ sensor:
       # - multiply: 60
       - lambda: return x * ((60.0 / id(select_pulse_rate).state) * 1000.0);
     total:
-      name: '${friendly_name} - Total Energy'
-      id: sensor_total_energy
-      unit_of_measurement: 'kWh'
+      name: '${friendly_name} - Total Gas'
+      id: sensor_total_gas
+      unit_of_measurement: 'm^3'
       icon: mdi:circle-slice-3
       state_class: total_increasing
-      device_class: energy
+      device_class: gas
       accuracy_decimals: 3
       filters:
         # multiply value = 1 / imp value
         # - multiply: 0.001
         - lambda: return x * (1.0 / id(select_pulse_rate).state);
   # Total day useage
-  - platform: total_daily_energy
-    name: '${friendly_name} - Daily Energy'
-    id: sensor_total_daily_energy
-    power_id: sensor_energy_pulse_meter
-    unit_of_measurement: 'kWh'
+  - platform: total_daily_gas
+    name: '${friendly_name} - Daily Gas'
+    id: sensor_total_daily_gas
+    power_id: sensor_gas_pulse_meter
+    unit_of_measurement: 'm^3'
     icon: mdi:circle-slice-3
     state_class: total_increasing
-    device_class: energy
+    device_class: gas
     accuracy_decimals: 3
     filters:
       # Multiplication factor from W to kW is 0.001
